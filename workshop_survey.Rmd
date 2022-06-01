@@ -1,0 +1,251 @@
+---
+title: "Food Security Workshop Survey Results"
+author: "Myanmar Food Security Cluster"
+date: "2022/06/01"
+output: 
+  html_document:
+    code_download: true
+    theme: readable
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    number_sections: false
+    collapsed: false
+always_allow_html: true 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(readxl)
+library(scales)
+library(janitor)
+library(kableExtra)
+library(DT)
+
+theme_set(theme_light())
+
+ws <- read_excel("Food_Security_Workshop_survey.xlsx") %>% 
+  clean_names() %>% 
+  mutate(organisation = name_of_organisation) %>% 
+  mutate(organisation = recode(organisation, 
+                               "Center for Social Integrity" = "Center for Social Integrity (CSI)", 
+                               "FAO Myanmar" = "FAO", 
+                               "Food and Agriculture Organization" = "FAO", 
+                               "Food and Agriculture Organization of the United Nations" = "FAO", 
+                               "HI" = "Humanity and Inclusion", 
+                               "Humanity&inclusion" = "Humanity and Inclusion")) %>% 
+  group_by(name_of_respondent) %>%
+  slice(which.max(index)) %>% 
+  ungroup()
+
+`%out%` <- Negate(`%in%`)
+```
+
+```{css, echo=FALSE}
+
+#TOC::before {
+  content: "";
+  display: block;
+  height: 70px;
+  margin: 2em 20px 40px 20px;
+  background-image: url("Myanmar_cluster_blue.png");
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+```
+
+```{=html}
+<style>
+    body .main-container {
+        max-width: 1280px;
+    }
+</style>
+```
+
+
+## Food security workshop survey results
+
+This is a summary of the results of the food security workshop survey on participant preferences. The Food Security Cluster would like to thank all the respondents for sharing their thoughts with us. 
+
+<br><br>
+
+
+### Respondents and organisations 
+
+Responses were submitted for the Food Security Workshop survey between the 27th of May and the 1st of June 2022. A total of **`r nrow(ws)`** responses were collected from across **`r ws %>% distinct(organisation) %>% nrow()`** organisations: 
+
+<br>
+
+
+```{r dt-organisation-respondents}
+ws %>% 
+  group_by(organisation) %>% 
+  summarise(respondents = n()) %>% 
+  datatable()
+
+```
+
+<br>
+
+The survey was generally answered by those in senior management positions: 
+
+<br>
+
+```{r position}
+ws %>% 
+  mutate(position = case_when(str_detect(title_post, "Representative|Director|director|CD") ~ "Country Director", 
+                              str_detect(title_post, "Manager|Head|Leader|leader") ~ "Programme Manager/Head of Programmes",
+                              str_detect(title_post, "Coordinator|coordinator") ~ "Coordinator",
+                              str_detect(title_post, "Specialist|specialist|Agronomist|Advisor") ~ "Technical Specialist", 
+                              TRUE ~  "Other")) %>% 
+  group_by(position) %>% 
+  summarise(count = n()) %>% 
+  mutate(position = fct_reorder(position, count)) %>% 
+  ggplot(aes(x = count, y = position)) + 
+  geom_col(aes(fill = position)) + 
+  geom_text(aes(label = count), hjust = "inward") +
+  labs(x = "Count", y = "", 
+       title = "Respondents by position within organisation") + 
+  theme(legend.position = "none") + 
+  scale_x_continuous(breaks = seq(0, 13, by = 2))
+
+```
+
+<br><br>
+
+### Topics
+
+The topics that respondents preferred to be covered were: 
+
+<br>
+
+```{r table-topics}
+ws %>% 
+  select(contains("choice")) %>% 
+  pivot_longer(cols = everything(), names_to = "ranking", values_to = "topic") %>% 
+  mutate(ranking = str_replace_all(ranking, "x", "")) %>% 
+  group_by(topic) %>% 
+  summarise(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  kable(caption = "Most popular topics and number of times they were chosen") %>% 
+  kable_classic_2("striped")
+```
+
+<br>
+
+With these preferences in mind, the Food Security Cluster will prepare a workshop agenda and share it with all partners shortly. 
+
+<br><br>
+
+### Meeting dates and formats
+
+A plurality of respondents preferred to hold the workshop in the second half of June. 
+
+<br>
+
+```{r meeting-date}
+ws %>% 
+  group_by(date = what_is_your_preferred_date_for_the_meeting) %>% 
+  summarise(count = n()) %>%  
+  filter(!is.na(date)) %>% 
+  mutate(date = fct_relevel(date, c("First half of June",
+                                    "Second half of June", 
+                                    "First week of July"))) %>% 
+  ggplot(aes(x = count, y = date)) + 
+  geom_col(aes(fill = date)) + 
+  geom_text(aes(label = count), hjust = "inward") + 
+  labs(x = "Count", y = "", 
+       title = "Preferred meeting dates") + 
+  theme(legend.position = "none")
+```
+
+<br>
+
+A slight plurality of respondents preferred to hold the workshop over two half days. 
+
+<br>
+
+```{r meeting-format}
+ws %>% 
+  group_by(format = what_is_the_best_format_for_the_meeting) %>% 
+  summarise(count = n()) %>% 
+  filter(!is.na(format)) %>% 
+  mutate(format = fct_reorder(format, count)) %>% 
+  ggplot(aes(x = count, y = format)) + 
+  geom_col(aes(fill = format)) + 
+  geom_text(aes(label = count), hjust = "inward") + 
+  labs(x = "Count", y = "", 
+       title = "Preferred meeting formats") + 
+  theme(legend.position = "none")
+```
+
+<br>
+
+Options will be provided for online, hybrid and in-person set ups. In person meetings will be held simulataneously in Yangon and Bangkok. 
+
+<br>
+
+```{r meeting-set-up}
+ws %>% 
+  rename(set_up = what_is_your_preferred_meeting_set_up) %>% 
+  count(set_up) %>% 
+  mutate(set_up = fct_reorder(set_up, n)) %>%  
+  ggplot(aes(x = n, y = set_up)) + 
+  geom_col(aes(fill = set_up)) + 
+  geom_text(aes(label = n), hjust = "inward") + 
+  labs(x = "Count", y = "Meeting set up", 
+       title = "Preferred meeting set ups") + 
+  theme(legend.position = "none")
+  
+```
+
+<br>
+
+### Other respondent preferences
+
+1/3 of respondents would like to present at the workshop. 
+
+<br>
+
+```{r table-present}
+
+ws %>% 
+  mutate(would_you_like_to_present = ifelse(is.na(would_you_like_to_present), "No", would_you_like_to_present)) %>% 
+  count(would_you_like_to_present, name = "count") %>%  
+  kable() %>% 
+  column_spec(1:2, width = "8em") %>%
+  kable_classic_2(full_width = FALSE)
+```
+<br> 
+
+These are the topics they would like to present on. The Food Security Cluster will liaise with these respondents to obtain further details and try our best to include these sessions into the workshop schedule. 
+
+<br>
+
+```{r presentation-topics}
+
+ws %>% 
+  rename(presentation_topic = what_topic_would_you_like_to_present_on) %>% 
+  filter(!is.na(presentation_topic) & presentation_topic != "Nothing") %>% 
+  select(presentation_topic) %>% 
+  kable(caption = "List of suggested presentation topics from respondents") %>% kable_classic_2("striped")
+```
+
+<br>
+
+These are the comments provided by respondents. 
+
+<br>
+
+```{r}
+ws %>% 
+  rename(suggestions = please_provide_any_other_comments_and_suggestions) %>% 
+  filter(!is.na(suggestions) & suggestions %out% c("NA", "nil", "N/A", "Nothing special")) %>% 
+  select(suggestions) %>% 
+  kable(caption = "Suggestions from respondents") %>% 
+  kable_classic_2("striped")
+```
+
+<br>
