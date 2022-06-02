@@ -1,0 +1,16 @@
+"0","gen_plot <- function(tbl, column_var1) {
+  
+  column_var1 <- enquo(column_var1)
+  
+  tbl %>% 
+    group_by(!!column_var1) %>% 
+    summarise(count = n()) %>% 
+    ggplot(aes(x = count, y = !!column_var1)) + 
+    geom_col(aes(fill = !!column_var1)) + 
+    geom_text(aes(label = count), hjust = ""inward"") + 
+    labs = (x = ""Count"", y = """") +
+"
+"2","Error: unexpected ',' in:
+""    geom_text(aes(label = count), hjust = ""inward"") + 
+    labs = (x = ""Count"",""
+"

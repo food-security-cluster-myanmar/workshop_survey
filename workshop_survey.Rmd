@@ -82,7 +82,7 @@ Responses were submitted for the Food Security Workshop survey between the 27th 
 ```{r dt-organisation-respondents}
 ws %>% 
   group_by(organisation) %>% 
-  summarise(respondents = n()) %>% 
+  summarise(number_of_respondents = n()) %>% 
   datatable()
 
 ```
@@ -93,10 +93,46 @@ The survey was generally answered by those in senior management positions:
 
 <br>
 
+```{r}
+# function beneficiary summaries, 2 grouped variables
+sum_ben2 <- function(df, column_var1, column_var2) {
+  
+  column_var1 <- enquo(column_var1)
+  column_var2 <- enquo(column_var2)
+  
+  df %>%
+    group_by(!!column_var1, !!column_var2) %>% # must add bang-bang
+    summarise(beneficiaries = sum(beneficiaries)) %>% 
+    arrange(desc(beneficiaries))
+    
+}
+
+# why is my function not working? 
+gen_plot <- function(tbl, column_var1) {
+  
+  column_var1 <- enquo(column_var1)
+  
+  tbl %>% 
+    group_by(!!column_var1) %>% 
+    summarise(count = n()) %>% 
+    # mutate(!!column_var1 = fct_reorder(!!column_var1, count)) %>% 
+    ggplot(aes(x = count, y = !!column_var1)) + 
+    geom_col(aes(fill = !!column_var1)) + 
+    geom_text(aes(label = count), hjust = "inward") + 
+    labs(x = "Count", y = "") +
+    theme(legend.position = "none")
+  
+}
+
+```
+
+
 ```{r position}
+
 ws %>% 
   mutate(position = case_when(str_detect(title_post, "Representative|Director|director|CD") ~ "Country Director", 
-                              str_detect(title_post, "Manager|Head|Leader|leader") ~ "Programme Manager/Head of Programmes",
+                              str_detect(title_post, "Head") ~ "Head of Programmes",
+                              str_detect(title_post, "Manager|Leader|leader") ~ "Programme Manager",
                               str_detect(title_post, "Coordinator|coordinator") ~ "Coordinator",
                               str_detect(title_post, "Specialist|specialist|Agronomist|Advisor") ~ "Technical Specialist", 
                               TRUE ~  "Other")) %>% 
@@ -119,7 +155,6 @@ ws %>%
 
 The topics that respondents preferred to be covered were: 
 
-<br>
 
 ```{r table-topics}
 ws %>% 
@@ -242,7 +277,7 @@ These are the comments provided by respondents.
 ```{r}
 ws %>% 
   rename(suggestions = please_provide_any_other_comments_and_suggestions) %>% 
-  filter(!is.na(suggestions) & suggestions %out% c("NA", "nil", "N/A", "Nothing special")) %>% 
+  filter(!is.na(suggestions) & suggestions %out% c("NA", "nil", "N/A", "Nothing special", "Thanks")) %>% 
   select(suggestions) %>% 
   kable(caption = "Suggestions from respondents") %>% 
   kable_classic_2("striped")
