@@ -78,6 +78,11 @@ Responses were submitted for the Food Security Workshop survey between the 27th 
 
 <br>
 
+```{r}
+ws %>% count(title_post, sort = TRUE)
+```
+
+
 
 ```{r dt-organisation-respondents}
 ws %>% 
@@ -166,6 +171,7 @@ ws %>%
   arrange(desc(count)) %>% 
   kable(caption = "Most popular topics and number of times they were chosen") %>% 
   kable_classic_2("striped")
+
 ```
 
 <br>
@@ -284,3 +290,11 @@ ws %>%
 ```
 
 <br>
+
+```{r eval=FALSE, include=FALSE}
+ws %>% filter(would_you_like_to_present == "Yes") %>% 
+  select(name = name_of_respondent, organisation = name_of_organisation, position = title_post, 
+         email, present_yes_no = would_you_like_to_present,
+         presentation_topic = what_topic_would_you_like_to_present_on) %>% write_csv("want_to_present.csv")
+```
+
